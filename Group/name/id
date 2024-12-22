@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then 
+    echo "Please run as root"
+    exit
+fi
+
+# Get group name
+read -p "Enter group name: " GROUP_NAME
+
+# Create group
+groupadd $GROUP_NAME
+
+# Get password
+read -s -p "Enter default password for users: " PASSWORD
+echo
+
+# Get usernames and create users
+echo "Enter usernames (one per line). Press Ctrl+D when done:"
+while read username; do
+    useradd -m -g $GROUP_NAME $username
+    echo "$username:$PASSWORD" | chpasswd
+    chage -d 0 $username
+done
+
+# Create shared folder
+mkdir -p /opt/$GROUP_NAME
+chown :$GROUP_NAME /opt/$GROUP_NAME
+chmod 2775 /opt/$GROUP_NAME
+
+echo "Setup complete"
